@@ -2,87 +2,77 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
-import openai
-import os
-from dotenv import load_dotenv  # 🆕 für .env
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
 
-# 🔐 .env-Datei laden
+# 🌱 .env laden
 load_dotenv()
+client = OpenAI()  # API-Key wird automatisch aus .env gelesen
 
-# 🔐 OpenAI API Key aus .env-Datei holen
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# 📌 App-Titel
+# 🎯 App-Titel
 st.title("📈 Aktienanalyse für Stillhalter-Strategien")
 
+# 📎 Eingabe: Aktiensymbol
+symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT):", "AAPL")
 
-# 📌 App-Titel
-st.title("📈 Aktienanalyse für Stillhalter-Strategien")
-
-# 🧾 Eingabe
-symbol = st.text_input("📎 Aktiensymbol eingeben (z. B. AAPL, MSFT):", "AAPL")
-
-# 📅 Zeitraum festlegen
+# 📅 Zeitraum für Kursanalyse
 end_date = datetime.today()
 start_date = end_date - timedelta(days=180)
 
+# 🟢 Wenn Button geklickt → Analyse starten
 if st.button("🔍 Analyse starten"):
 
-    # 📉 Kursdaten laden
     stock = yf.Ticker(symbol)
     df = stock.history(start=start_date, end=end_date)
 
     if df.empty:
-        st.error("Keine Daten gefunden. Prüfe das Symbol.")
+        st.error("⚠️ Keine Kursdaten gefunden. Bitte Symbol prüfen.")
     else:
-        # 🎯 Technische Indikatoren berechnen
+        # 📊 Technische Indikatoren berechnen
         df["SMA20"] = df["Close"].rolling(window=20).mean()
         df["RSI"] = 100 - (100 / (1 + df["Close"].pct_change().rolling(window=14).mean()))
 
-        # 📊 Plot
-        st.subheader("📈 Kursverlauf & SMA")
+        # 📈 Kurs & SMA visualisieren
+        st.subheader(f"📊 Kursverlauf & SMA20 für {symbol}")
         fig, ax = plt.subplots()
-        ax.plot(df["Close"], label="Kurs")
-        ax.plot(df["SMA20"], label="SMA 20", linestyle="--")
-        ax.set_title(f"{symbol} – Kurs & SMA")
+        ax.plot(df["Close"], label="Kurs", linewidth=2)
+        ax.plot(df["SMA20"], label="SMA 20", linestyle="--", color="orange")
+        ax.set_title(f"{symbol} – Kursverlauf")
         ax.legend()
         st.pyplot(fig)
 
-        # 🧠 GPT-Prognose generieren
-        st.subheader("🤖 Kursprognose (LLM-basiert)")
+        # 📬 GPT-Prognose vorbereiten
+        st.subheader("🤖 Kursprognose & Strategie")
 
-        latest_price = df["Close"][-1]
-        rsi = df["RSI"].dropna().iloc[-1]
+        latest_price = df["Close"].iloc[-1]
+        latest_rsi = df["RSI"].dropna().iloc[-1]
+        sma = df["SMA20"].iloc[-1]
         trend = "seitwärts"
-        if df["SMA20"].iloc[-1] < df["Close"].iloc[-1]:
+        if latest_price > sma:
             trend = "aufwärts"
-        elif df["SMA20"].iloc[-1] > df["Close"].iloc[-1]:
+        elif latest_price < sma:
             trend = "abwärts"
 
         gpt_prompt = (
-            f"Eine Aktie ({symbol}) hat derzeit einen Kurs von {latest_price:.2f} USD, "
-            f"einen RSI von {rsi:.1f} und zeigt einen {trend}-Trend basierend auf dem SMA. "
-            "Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
-            "Und welche Stillhalterstrategie (Covered Call, CSP) ist sinnvoll?"
+            f"Die Aktie {symbol} notiert aktuell bei {latest_price:.2f} USD. "
+            f"Der RSI liegt bei {latest_rsi:.1f}, der Trend laut SMA ist {trend}. "
+            f"Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
+            f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
+            f"Nenne auch Strike-Überlegungen und Laufzeiten für eine konservative Prämieneinnahme."
         )
 
+        # 🧠 GPT abfragen
         try:
-            with st.spinner("GPT analysiert..."):
-              from openai import OpenAI
-
-client = OpenAI()  # API-Key wird automatisch aus Umgebungsvariable gelesen
-
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": gpt_prompt}],
-    temperature=0.3,
-)
-
-prediction = response.choices[0].message.content
-
-
-                st.success("📬 Prognose erhalten:")
-                st.markdown(prediction)
+            with st.spinner("GPT analysiert die Daten..."):
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": gpt_prompt}],
+                    temperature=0.3,
+                )
+                answer = response.choices[0].message.content
+                st.success("📬 GPT-Antwort:")
+                st.markdown(answer)
         except Exception as e:
-            st.error(f"Fehler bei OpenAI-Anfrage: {e}")
+            st.error(f"Fehler bei der GPT-Anfrage: {e}")
