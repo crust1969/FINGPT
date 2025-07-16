@@ -4,10 +4,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import openai
 import os
+from dotenv import load_dotenv  # 🆕 für .env
 from datetime import datetime, timedelta
 
-# 🔐 OpenAI API Key
+# 🔐 .env-Datei laden
+load_dotenv()
+
+# 🔐 OpenAI API Key aus .env-Datei holen
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# 📌 App-Titel
+st.title("📈 Aktienanalyse für Stillhalter-Strategien")
+
 
 # 📌 App-Titel
 st.title("📈 Aktienanalyse für Stillhalter-Strategien")
