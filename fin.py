@@ -69,12 +69,19 @@ if st.button("🔍 Analyse starten"):
 
         try:
             with st.spinner("GPT analysiert..."):
-                response = openai.ChatCompletion.create(
-                    model="gpt-4",
-                    messages=[{"role": "user", "content": gpt_prompt}],
-                    temperature=0.3,
-                )
-                prediction = response["choices"][0]["message"]["content"]
+              from openai import OpenAI
+
+client = OpenAI()  # API-Key wird automatisch aus Umgebungsvariable gelesen
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": gpt_prompt}],
+    temperature=0.3,
+)
+
+prediction = response.choices[0].message.content
+
+
                 st.success("📬 Prognose erhalten:")
                 st.markdown(prediction)
         except Exception as e:
