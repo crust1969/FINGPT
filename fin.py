@@ -8,8 +8,15 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 # 🌱 .env laden
-load_dotenv()
-client = OpenAI()  # API-Key wird automatisch aus .env gelesen
+
+load_dotenv()  # .env wird automatisch geladen
+
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    st.error("OPENAI_API_KEY nicht gefunden!")
+
+#load_dotenv()
+#client = OpenAI()  # API-Key wird automatisch aus .env gelesen
 
 # 🎯 App-Titel
 st.title("📈 Aktienanalyse für Stillhalter-Strategien")
