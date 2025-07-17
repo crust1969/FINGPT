@@ -70,6 +70,7 @@ if st.button("🔍 Analyse starten"):
             f"Der RSI liegt bei {latest_rsi:.1f}, der Trend laut SMA ist {trend}. "
             f"Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
             f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
+            f"Nenne den aktuellen Kurs der Aktie {symbol}."
             f"Nenne auch Strike-Überlegungen und Laufzeiten für eine konservative Prämieneinnahme."
             f"Nenne auch drei verschiedene Strike-Preise und Laufzeiten für mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
             f"Nenne auch für die drei verschiedenen Strike-Preise unterschiedliche Laufzeiten von 1 Woche, 2 Wochen und drei wochen sowie die jeweiligen mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
