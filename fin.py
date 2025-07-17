@@ -11,7 +11,7 @@ from openai import OpenAI
 
 load_dotenv()  # .env wird automatisch geladen
 
-api_key = os.getenv("API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     st.error("OPENAI_API_KEY nicht gefunden!")
 
