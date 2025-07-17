@@ -71,6 +71,8 @@ if st.button("🔍 Analyse starten"):
             f"Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
             f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
             f"Nenne auch Strike-Überlegungen und Laufzeiten für eine konservative Prämieneinnahme."
+            f"Nenne auch drei verschiedene Strike-Preise und Laufzeiten für mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
+            
         )
 
         # 🧠 GPT abfragen
