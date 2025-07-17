@@ -72,6 +72,7 @@ if st.button("🔍 Analyse starten"):
             f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
             f"Nenne auch Strike-Überlegungen und Laufzeiten für eine konservative Prämieneinnahme."
             f"Nenne auch drei verschiedene Strike-Preise und Laufzeiten für mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
+            f"Nenne auch für die drei verschiedenen Strike-Preise unterschiedliche Laufzeiten von 1 Woche, 2 Wochen und drei wochen sowie die jeweiligen mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
             
         )
 
