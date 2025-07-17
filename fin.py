@@ -6,26 +6,20 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
-from openai import OpenAI
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 
 # 🌱 .env laden
-
-load_dotenv()  # .env wird automatisch geladen
-
+load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     st.error("OPENAI_API_KEY nicht gefunden!")
 
-#load_dotenv()
-#client = OpenAI()  # API-Key wird automatisch aus .env gelesen
+client = OpenAI(api_key=api_key)
 
 # 🎯 App-Titel
 st.title("📈 Aktienanalyse für Stillhalter-Strategien")
 
 # 📎 Eingabe: Aktiensymbol
-symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT):", "AAPL")
+symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT, MUV2.DE):", "AAPL")
 
 # 📅 Zeitraum für Kursanalyse
 end_date = datetime.today()
@@ -42,13 +36,19 @@ if st.button("🔍 Analyse starten"):
     else:
         # 📊 Technische Indikatoren berechnen
         df["SMA20"] = df["Close"].rolling(window=20).mean()
+        df["SMA50"] = df["Close"].rolling(window=50).mean()
         df["RSI"] = 100 - (100 / (1 + df["Close"].pct_change().rolling(window=14).mean()))
 
-        # 📈 Kurs & SMA visualisieren
-        st.subheader(f"📊 Kursverlauf & SMA20 für {symbol}")
+        # Aktueller Kurs (letzter Schlusskurs)
+        aktueller_kurs = df["Close"].iloc[-1]
+        st.write(f"**Aktueller Kurs von {symbol}: {aktueller_kurs:.2f} USD**")
+
+        # 📈 Kurs & SMAs visualisieren
+        st.subheader(f"📊 Kursverlauf mit SMA20 & SMA50 für {symbol}")
         fig, ax = plt.subplots()
         ax.plot(df["Close"], label="Kurs", linewidth=2)
         ax.plot(df["SMA20"], label="SMA 20", linestyle="--", color="orange")
+        ax.plot(df["SMA50"], label="SMA 50", linestyle="--", color="blue")
         ax.set_title(f"{symbol} – Kursverlauf")
         ax.legend()
         st.pyplot(fig)
@@ -56,7 +56,7 @@ if st.button("🔍 Analyse starten"):
         # 📬 GPT-Prognose vorbereiten
         st.subheader("🤖 Kursprognose & Strategie")
 
-        latest_price = df["Close"].iloc[-1]
+        latest_price = aktueller_kurs
         latest_rsi = df["RSI"].dropna().iloc[-1]
         sma = df["SMA20"].iloc[-1]
         trend = "seitwärts"
@@ -67,14 +67,13 @@ if st.button("🔍 Analyse starten"):
 
         gpt_prompt = (
             f"Die Aktie {symbol} notiert aktuell bei {latest_price:.2f} USD. "
-            f"Der RSI liegt bei {latest_rsi:.1f}, der Trend laut SMA ist {trend}. "
+            f"Der RSI liegt bei {latest_rsi:.1f}, der Trend laut SMA 20 ist {trend}. "
             f"Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
             f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
             f"Nenne den aktuellen Kurs der Aktie {symbol}."
             f"Nenne auch Strike-Überlegungen und Laufzeiten für eine konservative Prämieneinnahme."
             f"Nenne auch drei verschiedene Strike-Preise und Laufzeiten für mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
-            f"Nenne auch für die drei verschiedenen Strike-Preise unterschiedliche Laufzeiten von 1 Woche, 2 Wochen und drei wochen sowie die jeweiligen mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
-            
+            f"Nenne auch für die drei verschiedenen Strike-Preise unterschiedliche Laufzeiten von 1 Woche, 2 Wochen und drei Wochen sowie die jeweiligen möglichen Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
         )
 
         # 🧠 GPT abfragen
