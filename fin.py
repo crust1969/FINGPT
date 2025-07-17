@@ -90,3 +90,27 @@ if st.button("Analyse starten"):
             trend = "aufwärts"
         elif aktueller_kurs < sma20:
             trend = "abwärts"
+
+        gpt_prompt = (
+            f"Die Aktie {symbol} notiert aktuell bei {aktueller_kurs:.2f} {waehrung}. "
+            f"Der RSI liegt bei {latest_rsi:.1f}, der Trend laut SMA ist {trend}. "
+            f"Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
+            f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
+            f"Nenne den aktuellen Kurs der Aktie {symbol}. "
+            f"Nenne auch Strike-Überlegungen und Laufzeiten für eine konservative Prämieneinnahme. "
+            f"Nenne auch drei verschiedene Strike-Preise und Laufzeiten für mögliche Prämieneinnahmen, füge den jeweiligen Deltawert hinzu. "
+            f"Nenne auch für die drei verschiedenen Strike-Preise unterschiedliche Laufzeiten von 1 Woche, 2 Wochen und drei Wochen sowie die jeweiligen möglichen Prämieneinnahmen, füge den jeweiligen Deltawert hinzu."
+        )
+
+        try:
+            with st.spinner("GPT analysiert die Daten..."):
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": gpt_prompt}],
+                    temperature=0.3,
+                )
+                answer = response.choices[0].message.content
+                st.success("GPT-Antwort:")
+                st.markdown(answer)
+        except Exception as e:
+            st.error(f"Fehler bei der GPT-Anfrage: {e}")
