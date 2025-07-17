@@ -6,20 +6,39 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import requests
 
 # 🌱 .env laden
 load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    st.error("OPENAI_API_KEY nicht gefunden!")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 
-client = OpenAI(api_key=api_key)
+if not OPENAI_API_KEY:
+    st.error("OPENAI_API_KEY nicht gefunden!")
+if not FINNHUB_API_KEY:
+    st.warning("FINNHUB_API_KEY nicht gefunden! Live-Kurs wird ggf. nicht verfügbar sein.")
+
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Funktion: Live-Kurs von Finnhub abfragen
+def get_finnhub_price(symbol, api_key):
+    # Finnhub benötigt Börsenpräfix bei manchen Tickers, z.B. "AAPL" bleibt "AAPL", aber "MUV2.DE" evtl. "XETRA:MUV2"
+    # Hier einfach symbol so wie eingegeben, du kannst das noch anpassen wenn nötig
+    url = f'https://finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}'
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('c')  # aktueller Kurs
+    except Exception as e:
+        st.error(f"Fehler bei Finnhub-Abfrage: {e}")
+    return None
 
 # 🎯 App-Titel
 st.title("📈 Aktienanalyse für Stillhalter-Strategien")
 
 # 📎 Eingabe: Aktiensymbol
-symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT, MUV2.DE):", "AAPL")
+symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT, MUV2):", "AAPL")
 
 # 📅 Zeitraum für Kursanalyse
 end_date = datetime.today()
@@ -39,8 +58,15 @@ if st.button("🔍 Analyse starten"):
         df["SMA50"] = df["Close"].rolling(window=50).mean()
         df["RSI"] = 100 - (100 / (1 + df["Close"].pct_change().rolling(window=14).mean()))
 
-        # Aktueller Kurs (letzter Schlusskurs)
-        aktueller_kurs = df["Close"].iloc[-1]
+        # Versuche Live-Kurs von Finnhub zu holen
+        aktueller_kurs = None
+        if FINNHUB_API_KEY:
+            aktueller_kurs = get_finnhub_price(symbol, FINNHUB_API_KEY)
+
+        # Falls Finnhub nicht liefert, Fallback auf yfinance letzter Close
+        if not aktueller_kurs:
+            aktueller_kurs = df["Close"].iloc[-1]
+
         st.write(f"**Aktueller Kurs von {symbol}: {aktueller_kurs:.2f} USD**")
 
         # 📈 Kurs & SMAs visualisieren
@@ -56,17 +82,16 @@ if st.button("🔍 Analyse starten"):
         # 📬 GPT-Prognose vorbereiten
         st.subheader("🤖 Kursprognose & Strategie")
 
-        latest_price = aktueller_kurs
         latest_rsi = df["RSI"].dropna().iloc[-1]
         sma = df["SMA20"].iloc[-1]
         trend = "seitwärts"
-        if latest_price > sma:
+        if aktueller_kurs > sma:
             trend = "aufwärts"
-        elif latest_price < sma:
+        elif aktueller_kurs < sma:
             trend = "abwärts"
 
         gpt_prompt = (
-            f"Die Aktie {symbol} notiert aktuell bei {latest_price:.2f} USD. "
+            f"Die Aktie {symbol} notiert aktuell bei {aktueller_kurs:.2f} USD. "
             f"Der RSI liegt bei {latest_rsi:.1f}, der Trend laut SMA 20 ist {trend}. "
             f"Welche Kursentwicklung ist in den nächsten 10–30 Tagen wahrscheinlich? "
             f"Welche Stillhalterstrategie (z. B. Covered Call, Cash Secured Put) wäre dafür geeignet? "
@@ -89,3 +114,4 @@ if st.button("🔍 Analyse starten"):
                 st.markdown(answer)
         except Exception as e:
             st.error(f"Fehler bei der GPT-Anfrage: {e}")
+
