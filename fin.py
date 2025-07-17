@@ -34,7 +34,7 @@ def get_finnhub_price(symbol, api_key):
 st.title("Aktienanalyse für Stillhalter-Strategien")
 
 # Eingabe: Aktiensymbol
-symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT, ALV.DE):", "AAPL"):", "AAPL")
+symbol = st.text_input("Gib das Aktiensymbol ein (z. B. AAPL, MSFT, ALV.DE):", "AAPL")
 
 # Symbol nicht automatisch ergänzen – Nutzer gibt z. B. AAPL oder ALV.DE direkt ein
 if "." not in symbol:
