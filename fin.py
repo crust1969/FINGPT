@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+from openai import OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 # 🌱 .env laden
 
